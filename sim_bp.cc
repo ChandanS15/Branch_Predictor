@@ -7,7 +7,7 @@
 #include "sim_bp.h"
 
 using namespace std;
-
+gshare branchPredictor;
 /*  argc holds the number of command line arguments
     argv[] holds the commands themselves
 
@@ -30,19 +30,12 @@ int main (int argc, char* argv[])
     params.M2 = 0;
     int *counter_bm;
     int M2_len;
-    int index_bm;
     int K_len;
     int predict = 0;
-    int miss_pridiction = 0;
-    float miss_prediction_rate = 0;
     int *counter_gs;
 
     int M1_len;
     int *counter_hm;
-    int index_temp;
-    int index_gs;
-    unsigned int glob_bhr_temp = 0;
-    unsigned int glob_bhr = 0;
 
     if (!(argc == 4 || argc == 5 || argc == 7))
     {
@@ -63,6 +56,8 @@ int main (int argc, char* argv[])
         params.M2       = strtoul(argv[2], NULL, 10);
         trace_file      = argv[3];
         printf("COMMAND\n%s %s %lu %s\n", argv[0], params.bp_name, params.M2, trace_file);
+
+        branchPredictor.branchPredictorInit(params.bp_name, 0,0,0,params.M2, trace_file);
     }
     else if(strcmp(params.bp_name, "gshare") == 0)          // Gshare
     {
@@ -75,6 +70,8 @@ int main (int argc, char* argv[])
         params.N        = strtoul(argv[3], NULL, 10);
         trace_file      = argv[4];
         printf("COMMAND\n%s %s %lu %lu %s\n", argv[0], params.bp_name, params.M1, params.N, trace_file);
+
+        branchPredictor.branchPredictorInit(params.bp_name, 0,params.M1,params.N ,0, trace_file);
 
     }
     else if(strcmp(params.bp_name, "hybrid") == 0)          // Hybrid
@@ -90,6 +87,8 @@ int main (int argc, char* argv[])
         params.M2       = strtoul(argv[5], NULL, 10);
         trace_file      = argv[6];
         printf("COMMAND\n%s %s %lu %lu %lu %lu %s\n", argv[0], params.bp_name, params.K, params.M1, params.N, params.M2, trace_file);
+
+        branchPredictor.branchPredictorInit(params.bp_name, params.K,params.M1,params.N,params.M2, trace_file);
 
     }
     else
@@ -119,60 +118,88 @@ int main (int argc, char* argv[])
         //     printf("%lx %s\n", addr, "n");          // Print and test if file is read correctly
         if(strcmp(params.bp_name, "bimodal") == 0)
         {
-            int M2 = params.M2;
-            M2_len = 1 << M2; // shift 1 left by M2 bits to get 2^M2
 
-            index_bm = addr >> 2; // shift right by 2 positions to discard lower bits
-
-            index_bm &= (M2_len-1);
-
+            uint32_t maskedIndex = branchPredictor.extractIndex(addr);
             if (outcome == 't')
             {
-                if(counter_bm[index_bm] < 2)
+                if(branchPredictor.branchHistoryTable[maskedIndex] < 2)
                 {
-                    miss_pridiction++; // if counter is less than 2 then it is predicted as not_taken
+                    branchPredictor.missPrediction++; // if counter is less than 2 then it is predicted as not taken
                 }
 
-                if(counter_bm[index_bm] < 3)  // counter not saturated
+                if(branchPredictor.branchHistoryTable[maskedIndex] < 3)  // counter not saturated
                 {
-                    counter_bm[index_bm]++;
+                    branchPredictor.branchHistoryTable[maskedIndex]++;
                 }
             }
 
             else if (outcome == 'n')
             {
-                if(counter_bm[index_bm] >= 2)
+                if(branchPredictor.branchHistoryTable[maskedIndex] >= 2)
                 {
-                    miss_pridiction++; // if counter is greater than or equal to 2 then it is predicted as not_taken
+                    branchPredictor.missPrediction++; // if counter is greater than or equal to 2 then it is predicted as not_taken
                 }
 
-                if(counter_bm[index_bm] > 0)   // counter not saturated
+                if(branchPredictor.branchHistoryTable[maskedIndex] > 0)   // counter not saturated
                 {
-                    counter_bm[index_bm]--;
+                    branchPredictor.branchHistoryTable[maskedIndex]--;
                 }
+            }
+        } else if(strcmp(params.bp_name, "gshare") == 0) {
+
+            uint32_t indexValue = branchPredictor.extractIndex(addr);
+
+            if(outcome == 't') {
+
+                // if the counter value at the index is less than 2 predict not taken
+                if(branchPredictor.branchHistoryTable[indexValue] < 2) {
+                    branchPredictor.missPrediction++;
+                }
+                // if not saturated increment the counter value
+                if(branchPredictor.branchHistoryTable[indexValue] < 3) {
+                    branchPredictor.branchHistoryTable[indexValue]++;
+                }
+                // Update the global branch history register
+                // by right shifting 1 bit
+
+                branchPredictor.globalBHR >>= 1;
+                // Tha actual outcome mus tbe place at the MSB
+                branchPredictor.globalBHR |= ( 1 << branchPredictor.bhrIndexBits -1);
+
+            } else if(outcome == 'n') {
+
+                if(branchPredictor.branchHistoryTable[indexValue] >= 2) {
+                    branchPredictor.missPrediction++;
+                }
+                if(branchPredictor.branchHistoryTable[indexValue] > 0) {
+                    branchPredictor.branchHistoryTable[indexValue]--;
+                }
+
+                //
+                branchPredictor.globalBHR >>= 1;
             }
         }
 
     }
     cout<<" OUTPUT"<<endl;
     cout<<"  number of predictions:    "<<predict<<endl;
-    cout<<"  number of mispredictions: "<<miss_pridiction<<endl;
-    miss_prediction_rate = ((float)miss_pridiction / (float)predict)*100;
-    printf("  misprediction rate:        %0.2f%% \n",miss_prediction_rate);
+    cout<<"  number of mispredictions: "<<branchPredictor.missPrediction <<endl;
+    branchPredictor.missPredictionRate= ((float)branchPredictor.missPrediction / (float)predict)*100;
+    printf("  misprediction rate:        %0.2f%% \n",branchPredictor.missPredictionRate);
     if(strcmp(params.bp_name, "bimodal") == 0)              //BIMODAL
     {
         cout<<" FINAL BIMODAL CONTENTS"<<endl;
-        for(int i=0; i < M2_len;i++)
+        for(uint32_t  i=0; i < branchPredictor.numOfBHTEntries;i++)
         {
-            cout<<i<<"       "<<counter_bm[i]<<endl;
+            cout<<i<<"       "<<branchPredictor.branchHistoryTable[i]<<endl;
         }
     }
     else if(strcmp(params.bp_name, "gshare") == 0)              //GSHARE
     {
         cout<<" FINAL GSHARE CONTENTS"<<endl;
-        for(int i=0; i < M1_len;i++)
+        for(int i=0; i < branchPredictor.numOfBHTEntries;i++)
         {
-            cout<<i<<"       "<<counter_gs[i]<<endl;
+            cout<<i<<"       "<<branchPredictor.branchHistoryTable[i]<<endl;
         }
     }
     else if(strcmp(params.bp_name, "hybrid") == 0)              //HYBRID
