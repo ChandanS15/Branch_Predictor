@@ -28,14 +28,8 @@ int main (int argc, char* argv[])
     unsigned long int addr; // Variable holds the address read from input file
 
     params.M2 = 0;
-    int *counter_bm;
-    int M2_len;
-    int K_len;
     int predict = 0;
-    int *counter_gs;
 
-    int M1_len;
-    int *counter_hm;
 
     if (!(argc == 4 || argc == 5 || argc == 7))
     {
@@ -204,21 +198,7 @@ int main (int argc, char* argv[])
     }
     else if(strcmp(params.bp_name, "hybrid") == 0)              //HYBRID
     {
-        cout<<" FINAL CHOOSER CONTENTS"<<endl;
-        for(int i=0; i < K_len;i++)
-        {
-            cout<<i<<"       "<<counter_hm[i]<<endl;
-        }
-        cout<<" FINAL GSHARE CONTENTS"<<endl;
-        for(int i=0; i < M1_len;i++)
-        {
-            cout<<i<<"       "<<counter_gs[i]<<endl;
-        }
-        cout<<" FINAL BIMODAL CONTENTS"<<endl;
-        for(int i=0; i < M2_len;i++)
-        {
-            cout<<i<<"       "<<counter_bm[i]<<endl;
-        }
+
     }
     return 0;
 }
