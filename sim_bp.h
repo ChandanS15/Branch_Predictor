@@ -57,7 +57,7 @@ public:
     uint32_t gsharePredictionValue = 0;
 
 
-    gshare() : predictorName("bimodal"), chooserTableIndexBits(0), gshareTableIndexBits(0), branchHistoryRegisterBits(0), bimodalTableIndexBits(0), traceFile("unknown") {}
+    //gshare() : predictorName("bimodal"), chooserTableIndexBits(0), gshareTableIndexBits(0), branchHistoryRegisterBits(0), bimodalTableIndexBits(0), traceFile("unknown") {}
     void branchPredictorInit(char *predictor_name, uint32_t chooserTableIndexBits, uint32_t gshareTableIndexBits, uint32_t branchHistoryRegisterBits, uint32_t bimodalTableIndexBits, char *traceFile){
 
         this->predictorName = predictor_name;
@@ -73,7 +73,7 @@ public:
             bimodalBranchHistoryTable.resize(numOfBHTEntries, 2);
         }
         else if (strcmp(this->predictorName,"gshare") == 0) {
-            numOfBHTEntries = pow(2,chooserTableIndexBits);
+            numOfBHTEntries = pow(2,gshareTableIndexBits);
             gshareBranchHistoryTable.resize(numOfBHTEntries, 2);
         }
         else if (strcmp(this->predictorName,"hybrid") == 0) {
