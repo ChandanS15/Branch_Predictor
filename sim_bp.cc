@@ -152,10 +152,11 @@ int main (int argc, char* argv[])
                     branchPredictor.gshareBranchHistoryTable[branchPredictor.gshareIndexValue]++;
                 }
                 // Update the global branch history register
-                // by right shifting 1 bit
+                // by right shifting 1 bit.
 
                 branchPredictor.globalBHR >>= 1;
-                // Tha actual outcome mus tbe place at the MSB
+                // Tha actual outcome must be placed at the MSB of the BHR.
+                // Here placing value 1 because actual outcome is taken.
                 branchPredictor.globalBHR |= ( 1 << branchPredictor.branchHistoryRegisterBits -1);
 
             } else if(outcome == 'n') {
@@ -166,8 +167,11 @@ int main (int argc, char* argv[])
                 if(branchPredictor.gshareBranchHistoryTable[branchPredictor.gshareIndexValue] > 0) {
                     branchPredictor.gshareBranchHistoryTable[branchPredictor.gshareIndexValue]--;
                 }
+                // Update the global branch history register
+                // by right shifting 1 bit.
 
-                //
+                // Tha actual outcome must be placed at the MSB of the BHR.
+                // Here placing value 0 because actual outcome is not-taken.
                 branchPredictor.globalBHR >>= 1;
             }
         } else if(strcmp(params.bp_name, "hybrid") == 0) {
@@ -176,7 +180,8 @@ int main (int argc, char* argv[])
 
 
 
-
+// depending on the current counter value of bimodal branch history table
+            // set the bimodal prediction value
             if(branchPredictor.bimodalBranchHistoryTable[branchPredictor.bimodalIndexValue] >= 2) {
                 // predict bimodal as taken if greater than 2
                 branchPredictor.bimodalPredictionValue = 1;
@@ -185,6 +190,10 @@ int main (int argc, char* argv[])
                 branchPredictor.bimodalPredictionValue = 0;
             }
 
+
+
+// depending on the current counter value of gshare branch history table
+            // set the gshare prediction value
             if(branchPredictor.gshareBranchHistoryTable[branchPredictor.gshareIndexValue] >= 2) {
                 // predict gshare as taken if greater than 2
                 branchPredictor.gsharePredictionValue = 1;
@@ -192,11 +201,12 @@ int main (int argc, char* argv[])
                 // predict gshare as taken if less than 2
                 branchPredictor.gsharePredictionValue = 0;
             }
-            cout<<"control reaching here"<<endl;
+            //cout<<"control reaching here"<<endl;
 
 
-            // selecting gshare branch predictor based on the chooser table value
-            if(branchPredictor.hybridBranchHistoryTable[branchPredictor.hybridIndexValue] >= 2) {
+            // selecting gshare branch predictor based on the chooser table value i.e if greater than 2
+            // select the prediction of gshare branch predictor
+            if(branchPredictor.chooserBranchHistoryTable[branchPredictor.hybridIndexValue] >= 2) {
 
                 if( (outcome == 't') && (branchPredictor.gsharePredictionValue == 0) ||
                     (outcome == 'n') && (branchPredictor.gsharePredictionValue == 1)) {
@@ -204,13 +214,16 @@ int main (int argc, char* argv[])
                     branchPredictor.missPrediction++;
                     }
 
-                if( ( outcome == 't') && branchPredictor.gshareBranchHistoryTable[branchPredictor.gsharePredictionValue] < 3) {
+                if( ( outcome == 't') && branchPredictor.gshareBranchHistoryTable[branchPredictor.gshareIndexValue] < 3) {
                     branchPredictor.gshareBranchHistoryTable[branchPredictor.gshareIndexValue]++;
                 }
 
-                if( ( outcome == 'n') && branchPredictor.gshareBranchHistoryTable[branchPredictor.gsharePredictionValue] < 3) {
+                if( ( outcome == 'n') && branchPredictor.gshareBranchHistoryTable[branchPredictor.gshareIndexValue] > 0) {
                     branchPredictor.gshareBranchHistoryTable[branchPredictor.gshareIndexValue]--;
                 }
+
+                // selecting bimodal branch predictor based on the chooser table value i.e if not greater than
+                // select the prediction of bimodal branch predictor
             } else {
                 if( (outcome == 't') && (branchPredictor.bimodalPredictionValue == 0) ||
                     (outcome == 'n') && (branchPredictor.bimodalPredictionValue == 1)) {
@@ -220,7 +233,7 @@ int main (int argc, char* argv[])
                     branchPredictor.bimodalBranchHistoryTable[branchPredictor.bimodalIndexValue]++;
                 }
 
-                if( ( outcome == 'n') && branchPredictor.bimodalBranchHistoryTable[branchPredictor.bimodalIndexValue] < 3) {
+                if( ( outcome == 'n') && branchPredictor.bimodalBranchHistoryTable[branchPredictor.bimodalIndexValue] > 0) {
                     branchPredictor.bimodalBranchHistoryTable[branchPredictor.bimodalIndexValue]--;
                 }
 
@@ -230,21 +243,21 @@ int main (int argc, char* argv[])
 
             if(outcome == 't') {
                 branchPredictor.globalBHR >>= 1;
-                branchPredictor.globalBHR |= ( 1 << branchPredictor.branchHistoryRegisterBits - 1);
+                branchPredictor.globalBHR |= ( 1 << (branchPredictor.branchHistoryRegisterBits - 1));
             }else {
                 branchPredictor.globalBHR >>= 1;
             }
 
             uint32_t outcome_int = (outcome == 't') ? 1 : 0;
+// compare the actual outcome versus the prediction value
+            if( ( outcome_int == branchPredictor.gsharePredictionValue) && (outcome_int != branchPredictor.bimodalPredictionValue) ) {
 
-            if( ( outcome_int == branchPredictor.gsharePredictionValue) && (outcome_int == branchPredictor.bimodalPredictionValue) ) {
-
-                if(branchPredictor.hybridBranchHistoryTable[branchPredictor.hybridIndexValue] < 3) {
-                    branchPredictor.hybridBranchHistoryTable[branchPredictor.hybridIndexValue]++;
+                if(branchPredictor.chooserBranchHistoryTable[branchPredictor.hybridIndexValue] < 3) {
+                    branchPredictor.chooserBranchHistoryTable[branchPredictor.hybridIndexValue]++;
                 }
             }else if (( outcome_int != branchPredictor.gsharePredictionValue) && (outcome_int == branchPredictor.bimodalPredictionValue)) {
-                if(branchPredictor.hybridBranchHistoryTable[branchPredictor.hybridIndexValue] > 0) {
-                    branchPredictor.hybridBranchHistoryTable[branchPredictor.hybridIndexValue]--;
+                if(branchPredictor.chooserBranchHistoryTable[branchPredictor.hybridIndexValue] > 0) {
+                    branchPredictor.chooserBranchHistoryTable[branchPredictor.hybridIndexValue]--;
                 }
 
             }
@@ -259,7 +272,7 @@ int main (int argc, char* argv[])
     if(strcmp(params.bp_name, "bimodal") == 0)              //BIMODAL
     {
         cout<<" FINAL BIMODAL CONTENTS"<<endl;
-        for(uint32_t  i=0; i < branchPredictor.numOfBHTEntries;i++)
+        for(uint32_t  i=0; i < branchPredictor.numOfbimodalBHTEntries;i++)
         {
             cout<<i<<"       "<<branchPredictor.bimodalBranchHistoryTable[i]<<endl;
         }
@@ -267,13 +280,28 @@ int main (int argc, char* argv[])
     else if(strcmp(params.bp_name, "gshare") == 0)              //GSHARE
     {
         cout<<" FINAL GSHARE CONTENTS"<<endl;
-        for(int i=0; i < branchPredictor.numOfBHTEntries;i++)
+        for(int i=0; i < branchPredictor.numOfgShareBHTEntries;i++)
         {
             cout<<i<<"       "<<branchPredictor.gshareBranchHistoryTable[i]<<endl;
         }
     }
     else if(strcmp(params.bp_name, "hybrid") == 0)              //HYBRID
     {
+        cout<<" FINAL CHOOSER CONTENTS"<<endl;
+        for(int i=0; i < branchPredictor.numOfchooserBHTEntries ;i++)
+        {
+            cout<<i<<"       "<<branchPredictor.chooserBranchHistoryTable[i]<<endl;
+        }
+        cout<<" FINAL GSHARE CONTENTS"<<endl;
+        for(int i=0; i < branchPredictor.numOfgShareBHTEntries;i++)
+        {
+            cout<<i<<"       "<<branchPredictor.gshareBranchHistoryTable[i]<<endl;
+        }
+        cout<<" FINAL BIMODAL CONTENTS"<<endl;
+        for(int i=0; i < branchPredictor.numOfbimodalBHTEntries;i++)
+        {
+            cout<<i<<"       "<<branchPredictor.bimodalBranchHistoryTable[i]<<endl;
+        }
 
     }
     return 0;

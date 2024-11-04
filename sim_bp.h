@@ -38,10 +38,12 @@ public:
     uint32_t indexMask;
     vector<uint32_t> bimodalBranchHistoryTable;
     vector<uint32_t> gshareBranchHistoryTable;
-    vector<uint32_t> hybridBranchHistoryTable;
+    vector<uint32_t> chooserBranchHistoryTable;
     uint32_t missPrediction;
     float_t missPredictionRate;
-    uint32_t numOfBHTEntries;
+    uint32_t numOfbimodalBHTEntries;
+    uint32_t numOfgShareBHTEntries;
+    uint32_t numOfchooserBHTEntries;
     uint32_t globalBHR;
     uint32_t gShareIndex;
     uint32_t tempGlobalBHR;
@@ -57,7 +59,7 @@ public:
     uint32_t gsharePredictionValue = 0;
 
 
-    gshare() : predictorName("bimodal"), chooserTableIndexBits(0), gshareTableIndexBits(0), branchHistoryRegisterBits(0), bimodalTableIndexBits(0), traceFile("unknown") {}
+    //gshare() : predictorName("bimodal"), chooserTableIndexBits(0), gshareTableIndexBits(0), branchHistoryRegisterBits(0), bimodalTableIndexBits(0), traceFile("unknown") {}
     void branchPredictorInit(char *predictor_name, uint32_t chooserTableIndexBits, uint32_t gshareTableIndexBits, uint32_t branchHistoryRegisterBits, uint32_t bimodalTableIndexBits, char *traceFile){
 
         this->predictorName = predictor_name;
@@ -67,21 +69,23 @@ public:
         this->bimodalTableIndexBits = bimodalTableIndexBits;
         this->traceFile = traceFile;
 
-        this->indexMask = (1 << bimodalTableIndexBits) - 1;
+        //this->indexMask = (1 << bimodalTableIndexBits) - 1;
         if(strcmp(this->predictorName,"bimodal") == 0) {
-            numOfBHTEntries = pow(2,bimodalTableIndexBits);
-            bimodalBranchHistoryTable.resize(numOfBHTEntries, 2);
+            numOfbimodalBHTEntries = pow(2,bimodalTableIndexBits);
+            bimodalBranchHistoryTable.resize(numOfbimodalBHTEntries, 2);
         }
         else if (strcmp(this->predictorName,"gshare") == 0) {
-            numOfBHTEntries = pow(2,gshareTableIndexBits);
-            gshareBranchHistoryTable.resize(numOfBHTEntries, 2);
+            numOfgShareBHTEntries = pow(2,gshareTableIndexBits);
+            gshareBranchHistoryTable.resize(numOfgShareBHTEntries, 2);
         }
         else if (strcmp(this->predictorName,"hybrid") == 0) {
-            numOfBHTEntries = pow(2,chooserTableIndexBits);
+            numOfgShareBHTEntries = pow(2,gshareTableIndexBits);
+            numOfbimodalBHTEntries = pow(2,bimodalTableIndexBits);
+            numOfchooserBHTEntries = pow(2,chooserTableIndexBits);
 
-            bimodalBranchHistoryTable.resize(numOfBHTEntries, 2);
-            gshareBranchHistoryTable.resize(numOfBHTEntries, 2);
-            hybridBranchHistoryTable.resize(numOfBHTEntries, 1);
+            bimodalBranchHistoryTable.resize(pow(2,bimodalTableIndexBits), 2);
+            gshareBranchHistoryTable.resize(pow(2,gshareTableIndexBits), 2);
+            chooserBranchHistoryTable.resize(pow(2,chooserTableIndexBits), 1);
         }
 
 
@@ -94,7 +98,7 @@ public:
 
         if(strcmp(predictorName,"bimodal") == 0 ){
 
-            bimodalIndexValue = ((programCounterValue >> 2) & indexMask);
+            bimodalIndexValue = ((programCounterValue >> 2) & ( (1 << bimodalTableIndexBits) - 1));
 
         } else if (strcmp(predictorName,"gshare") == 0 ) {
 
@@ -114,14 +118,17 @@ public:
             if(branchHistoryRegisterBits != 0) {
                 // uppermost n bits of m bits i.e n bits of M+1 : 2 bits of PC.
                 extractedPCBits =  ( (programCounterValue >> 2) & ( (1 << gshareTableIndexBits ) - 1U) );
+                //  m-n bits
                 tempGlobalBHR  = globalBHR << (gshareTableIndexBits - branchHistoryRegisterBits);
+
+                // xor bhr reg value and n bits of PC
                 gshareIndexValue = tempGlobalBHR ^ extractedPCBits;
             } else {
 
                 gshareIndexValue = ( (programCounterValue >> 2) & ( (1 << gshareTableIndexBits ) - 1U) );
             }
 
-            bimodalIndexValue = ((programCounterValue >> 2) & indexMask);
+            bimodalIndexValue = ((programCounterValue >> 2) & ( (1 << bimodalTableIndexBits) - 1) );
 
             hybridIndexValue = (programCounterValue >> 2) & ( (1 << chooserTableIndexBits ) - 1U);
 
