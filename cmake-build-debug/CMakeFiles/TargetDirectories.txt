@@ -1,3 +1,0 @@
-C:/Users/chand/OneDrive/Desktop/ECE563/project2/Project_code/cmake-build-debug/CMakeFiles/Project_code.dir
-C:/Users/chand/OneDrive/Desktop/ECE563/project2/Project_code/cmake-build-debug/CMakeFiles/edit_cache.dir
-C:/Users/chand/OneDrive/Desktop/ECE563/project2/Project_code/cmake-build-debug/CMakeFiles/rebuild_cache.dir
