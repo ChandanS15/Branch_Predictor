@@ -115,15 +115,18 @@ int main (int argc, char* argv[])
             if (outcome == 't')
             {
 
+                if(branchPredictor.bimodalBranchHistoryTable[branchPredictor.bimodalIndexValue] < 2)
+                {
+                    branchPredictor.missPrediction = branchPredictor.missPrediction + 1; // if counter is less than 2 then it is predicted as not taken
+                }
+
+
                 if(branchPredictor.bimodalBranchHistoryTable[branchPredictor.bimodalIndexValue] < 3)  // counter not saturated
                 {
                     branchPredictor.bimodalBranchHistoryTable[branchPredictor.bimodalIndexValue] = branchPredictor.bimodalBranchHistoryTable[branchPredictor.bimodalIndexValue] + 1;
                 }
 
-                if(branchPredictor.bimodalBranchHistoryTable[branchPredictor.bimodalIndexValue] < 2)
-                {
-                    branchPredictor.missPrediction = branchPredictor.missPrediction + 1; // if counter is less than 2 then it is predicted as not taken
-                }
+
 
 
             }
@@ -131,15 +134,17 @@ int main (int argc, char* argv[])
             else if (outcome == 'n')
             {
 
+                if(branchPredictor.bimodalBranchHistoryTable[branchPredictor.bimodalIndexValue] >= 2)
+                {
+                    branchPredictor.missPrediction = branchPredictor.missPrediction + 1; // if counter is greater than or equal to 2 then it is predicted as not_taken
+                }
+
                 if(branchPredictor.bimodalBranchHistoryTable[branchPredictor.bimodalIndexValue] > 0)   // counter not saturated
                 {
                     branchPredictor.bimodalBranchHistoryTable[branchPredictor.bimodalIndexValue] = branchPredictor.bimodalBranchHistoryTable[branchPredictor.bimodalIndexValue] - 1;
                 }
 
-                if(branchPredictor.bimodalBranchHistoryTable[branchPredictor.bimodalIndexValue] >= 2)
-                {
-                    branchPredictor.missPrediction = branchPredictor.missPrediction + 1; // if counter is greater than or equal to 2 then it is predicted as not_taken
-                }
+
 
 
             }
