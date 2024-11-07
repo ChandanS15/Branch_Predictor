@@ -114,28 +114,34 @@ int main (int argc, char* argv[])
             branchPredictor.extractIndex(addr);
             if (outcome == 't')
             {
-                if(branchPredictor.bimodalBranchHistoryTable[branchPredictor.bimodalIndexValue] < 2)
-                {
-                    branchPredictor.missPrediction++; // if counter is less than 2 then it is predicted as not taken
-                }
 
                 if(branchPredictor.bimodalBranchHistoryTable[branchPredictor.bimodalIndexValue] < 3)  // counter not saturated
                 {
-                    branchPredictor.bimodalBranchHistoryTable[branchPredictor.bimodalIndexValue]++;
+                    branchPredictor.bimodalBranchHistoryTable[branchPredictor.bimodalIndexValue] = branchPredictor.bimodalBranchHistoryTable[branchPredictor.bimodalIndexValue] + 1;
                 }
+
+                if(branchPredictor.bimodalBranchHistoryTable[branchPredictor.bimodalIndexValue] < 2)
+                {
+                    branchPredictor.missPrediction = branchPredictor.missPrediction + 1; // if counter is less than 2 then it is predicted as not taken
+                }
+
+
             }
 
             else if (outcome == 'n')
             {
-                if(branchPredictor.bimodalBranchHistoryTable[branchPredictor.bimodalIndexValue] >= 2)
-                {
-                    branchPredictor.missPrediction++; // if counter is greater than or equal to 2 then it is predicted as not_taken
-                }
 
                 if(branchPredictor.bimodalBranchHistoryTable[branchPredictor.bimodalIndexValue] > 0)   // counter not saturated
                 {
-                    branchPredictor.bimodalBranchHistoryTable[branchPredictor.bimodalIndexValue]--;
+                    branchPredictor.bimodalBranchHistoryTable[branchPredictor.bimodalIndexValue] = branchPredictor.bimodalBranchHistoryTable[branchPredictor.bimodalIndexValue] - 1;
                 }
+
+                if(branchPredictor.bimodalBranchHistoryTable[branchPredictor.bimodalIndexValue] >= 2)
+                {
+                    branchPredictor.missPrediction = branchPredictor.missPrediction + 1; // if counter is greater than or equal to 2 then it is predicted as not_taken
+                }
+
+
             }
         } else if(strcmp(params.bp_name, "gshare") == 0) {
 
@@ -145,34 +151,34 @@ int main (int argc, char* argv[])
 
                 // if the counter value at the index is less than 2 predict not taken
                 if(branchPredictor.gshareBranchHistoryTable[branchPredictor.gshareIndexValue] < 2) {
-                    branchPredictor.missPrediction++;
+                    branchPredictor.missPrediction = branchPredictor.missPrediction + 1;
                 }
                 // if not saturated increment the counter value
                 if(branchPredictor.gshareBranchHistoryTable[branchPredictor.gshareIndexValue] < 3) {
-                    branchPredictor.gshareBranchHistoryTable[branchPredictor.gshareIndexValue]++;
+                    branchPredictor.gshareBranchHistoryTable[branchPredictor.gshareIndexValue] = branchPredictor.gshareBranchHistoryTable[branchPredictor.gshareIndexValue] + 1;
                 }
                 // Update the global branch history register
                 // by right shifting 1 bit.
 
-                branchPredictor.globalBHR >>= 1;
+                branchPredictor.globalBHR = branchPredictor.globalBHR >> 1;
                 // Tha actual outcome must be placed at the MSB of the BHR.
                 // Here placing value 1 because actual outcome is taken.
-                branchPredictor.globalBHR |= ( 1 << branchPredictor.branchHistoryRegisterBits -1);
+                branchPredictor.globalBHR = branchPredictor.globalBHR | ( 1 << branchPredictor.branchHistoryRegisterBits -1);
 
             } else if(outcome == 'n') {
 
                 if(branchPredictor.gshareBranchHistoryTable[branchPredictor.gshareIndexValue] >= 2) {
-                    branchPredictor.missPrediction++;
+                    branchPredictor.missPrediction = branchPredictor.missPrediction + 1;
                 }
                 if(branchPredictor.gshareBranchHistoryTable[branchPredictor.gshareIndexValue] > 0) {
-                    branchPredictor.gshareBranchHistoryTable[branchPredictor.gshareIndexValue]--;
+                    branchPredictor.gshareBranchHistoryTable[branchPredictor.gshareIndexValue] = branchPredictor.gshareBranchHistoryTable[branchPredictor.gshareIndexValue] - 1;
                 }
                 // Update the global branch history register
                 // by right shifting 1 bit.
 
                 // Tha actual outcome must be placed at the MSB of the BHR.
                 // Here placing value 0 because actual outcome is not-taken.
-                branchPredictor.globalBHR >>= 1;
+                branchPredictor.globalBHR = branchPredictor.globalBHR >> 1;
             }
         } else if(strcmp(params.bp_name, "hybrid") == 0) {
 
@@ -209,15 +215,15 @@ int main (int argc, char* argv[])
                 if( (outcome == 't') && (branchPredictor.gsharePredictionValue == 0) ||
                     (outcome == 'n') && (branchPredictor.gsharePredictionValue == 1)) {
 
-                    branchPredictor.missPrediction++;
+                    branchPredictor.missPrediction = branchPredictor.missPrediction + 1;
                     }
 
                 if( ( outcome == 't') && branchPredictor.gshareBranchHistoryTable[branchPredictor.gshareIndexValue] < 3) {
-                    branchPredictor.gshareBranchHistoryTable[branchPredictor.gshareIndexValue]++;
+                    branchPredictor.gshareBranchHistoryTable[branchPredictor.gshareIndexValue] = branchPredictor.gshareBranchHistoryTable[branchPredictor.gshareIndexValue] + 1;
                 }
 
                 if( ( outcome == 'n') && branchPredictor.gshareBranchHistoryTable[branchPredictor.gshareIndexValue] > 0) {
-                    branchPredictor.gshareBranchHistoryTable[branchPredictor.gshareIndexValue]--;
+                    branchPredictor.gshareBranchHistoryTable[branchPredictor.gshareIndexValue] = branchPredictor.gshareBranchHistoryTable[branchPredictor.gshareIndexValue] - 1;
                 }
 
                 // selecting bimodal branch predictor based on the chooser table value i.e if not greater than
@@ -225,14 +231,14 @@ int main (int argc, char* argv[])
             } else {
                 if( (outcome == 't') && (branchPredictor.bimodalPredictionValue == 0) ||
                     (outcome == 'n') && (branchPredictor.bimodalPredictionValue == 1)) {
-                    branchPredictor.missPrediction++;
+                    branchPredictor.missPrediction = branchPredictor.missPrediction + 1;
                     }
                 if( ( outcome == 't') && branchPredictor.bimodalBranchHistoryTable[branchPredictor.bimodalIndexValue] < 3) {
-                    branchPredictor.bimodalBranchHistoryTable[branchPredictor.bimodalIndexValue]++;
+                    branchPredictor.bimodalBranchHistoryTable[branchPredictor.bimodalIndexValue] = branchPredictor.bimodalBranchHistoryTable[branchPredictor.bimodalIndexValue] + 1;
                 }
 
                 if( ( outcome == 'n') && branchPredictor.bimodalBranchHistoryTable[branchPredictor.bimodalIndexValue] > 0) {
-                    branchPredictor.bimodalBranchHistoryTable[branchPredictor.bimodalIndexValue]--;
+                    branchPredictor.bimodalBranchHistoryTable[branchPredictor.bimodalIndexValue] =  branchPredictor.bimodalBranchHistoryTable[branchPredictor.bimodalIndexValue] - 1;
                 }
 
             }
@@ -240,25 +246,25 @@ int main (int argc, char* argv[])
             // update global BHR
 
             if(outcome == 't') {
-                branchPredictor.globalBHR >>= 1;
-                branchPredictor.globalBHR |= ( 1 << (branchPredictor.branchHistoryRegisterBits - 1));
+                branchPredictor.globalBHR = branchPredictor.globalBHR >> 1;
+                branchPredictor.globalBHR |= ( 1 << (branchPredictor.branchHistoryRegisterBits - 1U));
             }else {
-                branchPredictor.globalBHR >>= 1;
+                branchPredictor.globalBHR = branchPredictor.globalBHR >> 1;
             }
 
-            if( ( ( outcome == 't' && branchPredictor.gsharePredictionValue == 1) || ( outcome == 'n' && branchPredictor.gsharePredictionValue == 0)  )
-                && ( (outcome == 'n' && branchPredictor.bimodalPredictionValue == 1) || (outcome == 't' && branchPredictor.bimodalPredictionValue == 0)  ) ) {
-
-                if(branchPredictor.chooserBranchHistoryTable[branchPredictor.hybridIndexValue] < 3) {
-                    branchPredictor.chooserBranchHistoryTable[branchPredictor.hybridIndexValue]++;
-                }
-            }else if ( ((outcome == 'n' && branchPredictor.gsharePredictionValue == 1) || (outcome == 't' && branchPredictor.gsharePredictionValue == 0)  )
+            if ( ((outcome == 'n' && branchPredictor.gsharePredictionValue == 1) || (outcome == 't' && branchPredictor.gsharePredictionValue == 0)  )
                 && ( ( outcome == 't' && branchPredictor.bimodalPredictionValue == 1) || ( outcome == 'n' && branchPredictor.bimodalPredictionValue == 0)  ) ) {
                 if(branchPredictor.chooserBranchHistoryTable[branchPredictor.hybridIndexValue] > 0) {
-                    branchPredictor.chooserBranchHistoryTable[branchPredictor.hybridIndexValue]--;
+                    branchPredictor.chooserBranchHistoryTable[branchPredictor.hybridIndexValue] = branchPredictor.chooserBranchHistoryTable[branchPredictor.hybridIndexValue] - 1;
                 }
 
-            }
+                } else if( ( ( outcome == 't' && branchPredictor.gsharePredictionValue == 1) || ( outcome == 'n' && branchPredictor.gsharePredictionValue == 0)  )
+                    && ( (outcome == 'n' && branchPredictor.bimodalPredictionValue == 1) || (outcome == 't' && branchPredictor.bimodalPredictionValue == 0)  ) ) {
+
+                    if(branchPredictor.chooserBranchHistoryTable[branchPredictor.hybridIndexValue] < 3) {
+                        branchPredictor.chooserBranchHistoryTable[branchPredictor.hybridIndexValue] = branchPredictor.chooserBranchHistoryTable[branchPredictor.hybridIndexValue] + 1;
+                    }
+                    }
 
         }
     }
